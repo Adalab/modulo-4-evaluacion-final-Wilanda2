@@ -38,11 +38,6 @@ async function getConnection() {
   return connection;
 }
 
-//Creamos endpoints --> CRUD create, read, update, delete. La ruta del endpoint tiene que coincidir con la del front
-
-//Insertar un registro en su entidad principal.
-// Actualizar un registro existente.
-// Eliminar un registro existente
 
 //ENDPOINT para Leer/Listar todos los registros existentes
 app.get('/books', async(req, res)=>{
@@ -55,12 +50,12 @@ app.get('/books', async(req, res)=>{
   res.json(result);
 })
 
-//ENDPOINT para // Leer registros filtrado por el campo de tu interés.
+//ENDPOINT para Leer registros filtrado por id.
 app.get('/books/:id', async (req, res)=>{
   //recibo el id del libro por url params
-  const idBook = req.params.id;
-
   const conex = await getConnection();
+  
+  const idBook = req.params.id;  
 
   //validaciones que hay que pensar
   if (isNaN(parseInt(idBook))) {
@@ -74,87 +69,127 @@ app.get('/books/:id', async (req, res)=>{
   
   // Validación de que el id no existe.
   if (result.length === 0 ) {
-    return res.json({success: true, error: "El id no existe."})
+    return res.json({success: true, error: "El id solicitado no existe."})
   }
-  res.json({ result });
-})
-
-app.get('/books/:author', async(req, res)=>{
-  
-  const conex = await getConnection();
-
-  const booksSQL = "SELECT * FROM books WHERE author = ?";
-  const [result] = await conex.query(booksSQL);
-  
   res.json(result);
 })
 
-
-
-
-// app.post('/recetas', async (req, res)=>{
-//   //recibimos el objeto de la base de datos por el body
-//   const data = req.body;
-//   //desestrucutramos de lo que viene del body, no tiene que ver con lo que viene de la base de datos
-//   const {nombreReceta, ingredientesReceta, instruc} = data //destructuring de objeto, vienen del body de la petición
+//ENDPOINT para Leer registros filtrado por autora.
+// app.get('/author', async(req, res)=>{
+  
 //   const conex = await getConnection();
-//   const sql = "INSERT INTO recetas (nombre ingredientes, instrucciones) values (?,?,?)";
-//   const [result] = await conex.query(sql, [
-//     nombreReceta, 
-//     ingredientesReceta, 
-//     instruc
-//   ])
-//   res.json({
-//     success: true,
-//     id: result.insertId //id que generó MySQL para la nueva fila
-//   })
+
+//   const booksSQL = "SELECT * FROM books WHERE author = ? ";
+//   const [result] = await conex.query(booksSQL);
+//   conex.end();
+  
+//   res.json({ result });
 // })
 
-// //el update debe ser método put
-// app.put('/recetas/:id', async (req, res)=>{
-//   const conex = await getConnection();
-//   //estas son url params
-//   const id = req.params.id;
-//   //por el body voy a mandar los datos de toda la receta
-//   const data = req.body
-//   const {nombreReceta, ingredientesReceta, instruc} = data;
+//ENDPOINT para Leer registros filtrado por libros leídos.
+app.get('/books/read/yes', async(req, res)=>{
+  
+  const conex = await getConnection();
 
-//   const sql = "UPDATE recetas SET nombre = ?, ingredientes = ?, instrucciones = ? WHERE id = ?"; //ojo con el where, si no se lo ponemos lo borra todo
-//   const [result] = await conex.query(sql, [
-//     nombreReceta, 
-//     ingredientesReceta, 
-//     instruc,
-//     id
-//   ])
-//   res.json({
-//     success: true,
-//     message: "Actualizado correctamente"
-//   })
-// })
+  const booksSQL = "SELECT * FROM books WHERE isItRead = 1 ";
+  const [result] = await conex.query(booksSQL);
+  conex.end();
+  
+  res.json({ result });
+})
 
-// //vamos a utilizar los queryparams
-// app.delete("/recetas", async (req, res)=> {
-//   const conex = await getConnection();
-//   const idReeceta = req.query.id;
+//ENDPOINT para Leer registros filtrado por libros no leídos.
+app.get('/books/read/no', async(req, res)=>{
+  
+  const conex = await getConnection();
 
-//   const sql = "DELETE FROM recetas WHERE id = ?";
-//   const [result] = await conex.query(sql, [idReeceta])
+  const booksSQL = "SELECT * FROM books WHERE isItRead = 0 ";
+  const [result] = await conex.query(booksSQL);
+  conex.end();
+  
+  res.json({ result });
+})
 
-//   if (result.affectedRows > 0) {
-//     res.json({
-//     success: true,
-//     message: "Eliminado correctamente"
-//   })
-//  } else {
-//     res.json({
-//       success: false,
-//       message: "No se ha eliminado nada"
-//     })
-//   }
-// })
+//ENDPOINT para Insertar un libro nuevo.
+app.post('/books/add', async (req, res)=>{
+  //recibimos el objeto de la base de datos por el body
+  const data = req.body;
+  //desestrucutramos de lo que viene del body, no tiene que ver con lo que viene de la base de datos
+  const { title, author, genre, yearBook, pages, synopsis, isItRead, rate } = data //destructuring de objeto, vienen del body de la petición
+
+  const conex = await getConnection();
+
+  const sql = "INSERT INTO books (title, author, genre, yearBook, pages, synopsis, isItRead, rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+  const [result] = await conex.query(sql, [
+    title, 
+    author,
+    genre,
+    yearBook,
+    pages,
+    synopsis,
+    isItRead,
+    rate
+  ])
+  res.json({
+    success: true,
+    id: result.insertId //id que generó MySQL para la nueva fila
+  })
+})
 
 
-// // //1. Instalar y configuro el ejs
+//ENDPOINT para Actualizar un libro existente.
+//el update debe ser método put
+app.put('/books/modify', async (req, res)=>{
+
+  const conex = await getConnection();
+
+  //estas son url params, el id del registro que quiero modificar
+  const id = req.params.id;
+  //por el body voy a mandar los datos de toda el registro
+  const data = req.body
+  const { title, author, genre, yearBook, pages, synopsis, isItRead, rate } = data;
+
+  const sql = "UPDATE books SET title = ?, author = ?, genre = ?, yearBook = ?, pages = ?, synopsis = ?, isItRead = ?, rate = ? WHERE id = ?"; //ojo con el where, si no se lo ponemos lo borra todo
+  const [result] = await conex.query(sql, [
+    title, 
+    author,
+    genre,
+    yearBook,
+    pages,
+    synopsis,
+    isItRead,
+    rate,
+    id
+  ])
+  res.json({
+    success: true,
+    message: "Actualizado correctamente."
+  })
+})
+
+//ENDPOINT para Eliminar un registro existente.
+//vamos a utilizar los queryparams
+app.delete("/books/delete", async (req, res)=> {
+
+  const conex = await getConnection();
+
+  const idBook = req.query.id;
+  const sql = "DELETE FROM books WHERE id = ?";
+  const [result] = await conex.query(sql, [idBook])
+
+  if (result.affectedRows > 0) {
+    res.json({
+    success: true,
+    message: "Libro eliminado correctamente."
+  })
+ } else {
+    res.json({
+      success: false,
+      message: "No se ha eliminado ningún libro."
+    })
+  }
+})
+
+
+// // //1. Instalar y configurar el ejs
 // // server.set('view engine', 'ejs');
-
-// //crear mi función para conectarnos con la bases de datos
