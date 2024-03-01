@@ -14,10 +14,9 @@ Las usuarias pueden iniciar sesión para acceder a sus bibliotecas personales.
 - Eliminar libros: Las usuarias pueden eliminar libros de su biblioteca.
 
 ### Tecnologías Utilizadas👩‍💻👩‍💻👩‍💻
-Lenguaje de Programación: Node.js
-Framework Web: Express.js
-Base de Datos: MySQL
-Autenticación: JSON Web Tokens (JWT)
+- Node.js, Express.js y CORS
+- Base de Datos: MySQL
+- Autenticación: JSON Web Tokens (JWT)
 
 ## Contribución
 Si deseas contribuir a este proyecto, ¡eres bienvenida! Siempre estamos abiertas a nuevas ideas y mejoras. Si deseas reportar un problema o solicitar una nueva función, por favor abre un issue en este repositorio. La idea es que "Mi biblioteca de autoras" siga creciendo hasta que llegue ser una aplicación funcional, con una interfaz agradable, acesible, intuitiva y fácil de manejar.
