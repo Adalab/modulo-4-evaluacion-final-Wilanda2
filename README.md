@@ -13,6 +13,25 @@ Las usuarias pueden iniciar sesión para acceder a sus bibliotecas personales.
 - Modificar libros: Las usuarias pueden actualizar la información de los libros existentes en su biblioteca.
 - Eliminar libros: Las usuarias pueden eliminar libros de su biblioteca.
 
+#### Endpoints de la api
+Método get
+- /books: Muestra una lista en formato .json de todos los libros registrados.
+- /books/:id: Busca libros por su id. Si no existe, muestra un mensaje de error.
+- /author/:author: Filtra los libros por autora.
+- /books/read/yes: Muestra los libros de la lista leídos.
+- /books/read/no: Muestra los libros de la lista sin leer.
+- 
+Método post
+- /books/add: Añade un nuevo registro a la base de datos.
+- /register: Registra una nueva usuaria.
+- /login: Da acceso al perfil a la usuaria.
+- 
+Método put
+- /books/modify/:id: Actualiza los datos del libro filtrado por id.
+- 
+Método delete
+. /books/deleto/:id: Elimina un libro filtrado por id.
+
 ### Tecnologías Utilizadas👩‍💻👩‍💻👩‍💻
 - Node.js, Express.js y CORS
 - Base de Datos: MySQL
