@@ -23,9 +23,9 @@ app.listen(port, () => {
   console.log(`Servidor conectado a http://localhost:${port}`);
 });
 
-//conexión a la bases de datos
+//conexión a la base de datos
 async function getConnection() {
-  //crear y configurar la conexion
+  //crear y configurar la conexión
   const connection = await mysql.createConnection({
     host: process.env.HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -38,6 +38,10 @@ async function getConnection() {
   return connection;
 }
 
+const generateToken = (data) => {
+  const token = jwt.sign(data, 'secret_key_me_lo_invento', { expiresIn: '1h' });
+  return token;
+};
 
 //ENDPOINT para Leer/Listar todos los registros existentes
 app.get('/books', async(req, res)=>{
@@ -75,23 +79,23 @@ app.get('/books/:id', async (req, res)=>{
 })
 
 //ENDPOINT para Leer registros filtrado por autora.
-// app.get('/author', async(req, res)=>{
+app.get('/author/:author', async(req, res)=>{
   
-//   const conex = await getConnection();
+  const conex = await getConnection();
 
-//   const booksSQL = "SELECT * FROM books WHERE author = ? ";
-//   const [result] = await conex.query(booksSQL);
-//   conex.end();
+  const booksSQL = "SELECT * FROM books WHERE author = '?' ";
+  const [result] = await conex.query(booksSQL);
+  conex.end();
   
-//   res.json({ result });
-// })
+  res.json({ result });
+})
 
 //ENDPOINT para Leer registros filtrado por libros leídos.
 app.get('/books/read/yes', async(req, res)=>{
   
   const conex = await getConnection();
 
-  const booksSQL = "SELECT * FROM books WHERE isItRead = 1 ";
+  const booksSQL = "SELECT * FROM books WHERE isItRead = 1";
   const [result] = await conex.query(booksSQL);
   conex.end();
   
@@ -103,7 +107,7 @@ app.get('/books/read/no', async(req, res)=>{
   
   const conex = await getConnection();
 
-  const booksSQL = "SELECT * FROM books WHERE isItRead = 0 ";
+  const booksSQL = "SELECT * FROM books WHERE isItRead = 0";
   const [result] = await conex.query(booksSQL);
   conex.end();
   
@@ -130,6 +134,8 @@ app.post('/books/add', async (req, res)=>{
     isItRead,
     rate
   ])
+  conex.end();
+
   res.json({
     success: true,
     id: result.insertId //id que generó MySQL para la nueva fila
@@ -139,14 +145,14 @@ app.post('/books/add', async (req, res)=>{
 
 //ENDPOINT para Actualizar un libro existente.
 //el update debe ser método put
-app.put('/books/modify', async (req, res)=>{
-
+app.put('/books/modify/:id', async (req, res)=>{
+try {
   const conex = await getConnection();
 
   //estas son url params, el id del registro que quiero modificar
   const id = req.params.id;
   //por el body voy a mandar los datos de toda el registro
-  const data = req.body
+  const data = req.body;
   const { title, author, genre, yearBook, pages, synopsis, isItRead, rate } = data;
 
   const sql = "UPDATE books SET title = ?, author = ?, genre = ?, yearBook = ?, pages = ?, synopsis = ?, isItRead = ?, rate = ? WHERE id = ?"; //ojo con el where, si no se lo ponemos lo borra todo
@@ -161,10 +167,16 @@ app.put('/books/modify', async (req, res)=>{
     rate,
     id
   ])
+  conex.end();
+
   res.json({
     success: true,
     message: "Actualizado correctamente."
   })
+} catch (error) {
+  console.log(error)
+}
+  
 })
 
 //ENDPOINT para Eliminar un registro existente.
@@ -176,6 +188,7 @@ app.delete("/books/delete", async (req, res)=> {
   const idBook = req.query.id;
   const sql = "DELETE FROM books WHERE id = ?";
   const [result] = await conex.query(sql, [idBook])
+  conex.end();
 
   if (result.affectedRows > 0) {
     res.json({
@@ -190,6 +203,67 @@ app.delete("/books/delete", async (req, res)=> {
   }
 })
 
+
+//ENPOINTS DE LOGIN
+
+//ENDPOINT para registro
+app.post('/register', async (req, resp) => {
+  const { username, email, pass } = req.body;
+  const conex = await getconnection();
+
+  const selectUser = 'select * from users where email = ?  or username = ? ';
+  const [resultSelect] = await conex.query(selectUser, [email, username]);
+
+  if (resultSelect.length === 0) {
+    const passwordHashed = await bcrypt.hash(pass, 10);
+    const insertUser =
+      'insert into users (email, username, hashed_password) values (?,?,?)';
+    const [resultInsert] = await conex.query(insertUser, [
+      email,
+      username,
+      passwordHashed,
+    ]);
+    resp.json({ success: true, data: resultInsert });
+  }
+});
+
+
+//ENDPOINT para login
+app.post('/login', async (req, resp) => {
+  const { email, pass } = req.body;
+  const conex = await getconnection();
+  const selectUser = 'select * from users where email = ?';
+  const [resultSelect] = await conex.query(selectUser, [email]);
+
+  if (resultSelect.length !== 0) {
+    const isOkPass = await bcrypt.compare(
+      pass,
+      resultSelect[0].hashed_password
+    );
+    if (isOkPass) {
+      // generar token
+      const infoToken = {
+        id: resultSelect[0].id,
+        email: resultSelect[0].email,
+      };
+      const token = generateToken(infoToken);
+      resp.json({
+        success: true,
+        token: token,
+      });
+    } else {
+      resp.json({
+        success: false,
+        msj: 'contraseña incorrecta',
+      });
+    }
+  } else {
+    resp.json({
+      success: false,
+      msj: 'correo no existe',
+    });
+  }
+});
 
 // // //1. Instalar y configurar el ejs
 // // server.set('view engine', 'ejs');

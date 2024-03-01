@@ -22,3 +22,18 @@ INSERT INTO Books (title, author, genre, yearBook, pages, synopsis, isItRead, ra
 
 SELECT * FROM books;
 
+SELECT * FROM books WHERE id = 4;
+
+SELECT * FROM books WHERE isItRead = 1;
+
+SELECT * FROM books WHERE isItRead = 0;
+
+SELECT * FROM books WHERE author = "Cher";
+
+CREATE TABLE users (
+id int auto_increment primary key,
+email varchar(50) NOT NULL,
+nameUser varchar(50),
+address varchar(50),
+passwordUser varchar(10)
+)
