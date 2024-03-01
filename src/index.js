@@ -10,6 +10,12 @@ const mysql = require('mysql2/promise');
 //Creamos el archivo .env, hermano de package,json, para crear las variables de entorno donde guardar información sensible, y le decimos que lo use
 require("dotenv").config(); 
 
+//Importo la dependencia para encriptar contraseñas.
+const bcrypt = require('bcrypt');
+
+//Importo jsonWebToken.
+const jwt = require('jsonwebtoken');
+
 //Crear el servidor
 const app = express(); //mi server/app/servidor, el nombre que quiera
 
@@ -38,8 +44,9 @@ async function getConnection() {
   return connection;
 }
 
+//Función para el token
 const generateToken = (data) => {
-  const token = jwt.sign(data, 'secret_key_me_lo_invento', { expiresIn: '1h' });
+  const token = jwt.sign(data, 'secret_key_invented', { expiresIn: '1h' });
   return token;
 };
 
@@ -83,8 +90,10 @@ app.get('/author/:author', async(req, res)=>{
   
   const conex = await getConnection();
 
-  const booksSQL = "SELECT * FROM books WHERE author = '?' ";
-  const [result] = await conex.query(booksSQL);
+  const author = req.params.author;
+
+  const authorSQL = "SELECT * FROM books WHERE author = ? ";
+  const [result] = await conex.query(authorSQL, [author]);
   conex.end();
   
   res.json({ result });
@@ -142,9 +151,7 @@ app.post('/books/add', async (req, res)=>{
   })
 })
 
-
 //ENDPOINT para Actualizar un libro existente.
-//el update debe ser método put
 app.put('/books/modify/:id', async (req, res)=>{
 try {
   const conex = await getConnection();
@@ -180,7 +187,6 @@ try {
 })
 
 //ENDPOINT para Eliminar un registro existente.
-//vamos a utilizar los queryparams
 app.delete("/books/delete", async (req, res)=> {
 
   const conex = await getConnection();
@@ -207,60 +213,66 @@ app.delete("/books/delete", async (req, res)=> {
 //ENPOINTS DE LOGIN
 
 //ENDPOINT para registro
-app.post('/register', async (req, resp) => {
-  const { username, email, pass } = req.body;
-  const conex = await getconnection();
+app.post('/register', async (req, res) => {
+  const { email, nameUser, address, pass } = req.body;
 
-  const selectUser = 'select * from users where email = ?  or username = ? ';
-  const [resultSelect] = await conex.query(selectUser, [email, username]);
+  const conex = await getConnection();
 
+  const selectUser = 'SELECT * FROM users WHERE email = ?  OR nameUser = ? ';
+  const [resultSelect] = await conex.query(selectUser, [email, nameUser]);
+
+  //Si no devuelve nada, si la longitud del array es 0, es que no existe. Con bcrypt, encripto la constraseña.
   if (resultSelect.length === 0) {
     const passwordHashed = await bcrypt.hash(pass, 10);
     const insertUser =
-      'insert into users (email, username, hashed_password) values (?,?,?)';
+      'INSERT INTO users (email, nameUser, address, passwordUser) VALUES (?, ?, ?, ?)';
     const [resultInsert] = await conex.query(insertUser, [
       email,
-      username,
-      passwordHashed,
+      nameUser,
+      address,
+      passwordHashed
     ]);
-    resp.json({ success: true, data: resultInsert });
+
+    res.json({ success: true, data: resultInsert });
   }
 });
 
-
 //ENDPOINT para login
-app.post('/login', async (req, resp) => {
+app.post('/login', async (req, res) => {
   const { email, pass } = req.body;
-  const conex = await getconnection();
-  const selectUser = 'select * from users where email = ?';
+
+  const conex = await getConnection();
+
+  const selectUser = 'SELECT * FROM users WHERE email = ?';
   const [resultSelect] = await conex.query(selectUser, [email]);
 
   if (resultSelect.length !== 0) {
     const isOkPass = await bcrypt.compare(
       pass,
-      resultSelect[0].hashed_password
+      resultSelect[0].passwordUser
     );
     if (isOkPass) {
-      // generar token
+      //Defino cómo quiero que sea el token.
       const infoToken = {
         id: resultSelect[0].id,
-        email: resultSelect[0].email,
+        email: resultSelect[0].email
       };
+      // Genero token llamando a la función. 
       const token = generateToken(infoToken);
-      resp.json({
+      res.json({
         success: true,
         token: token,
       });
     } else {
-      resp.json({
+      res.json({
         success: false,
-        msj: 'contraseña incorrecta',
+        msg: 'Contraseña incorrecta.',
       });
     }
   } else {
-    resp.json({
+    res.json({
       success: false,
-      msj: 'correo no existe',
+      msg: 'El correo introducido no existe',
     });
   }
 });
