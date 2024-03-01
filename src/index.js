@@ -2,7 +2,7 @@
 
 //Importar libreria que necesito para crear el servidor
 const express = require('express');
-// instalaMos el cors
+// instalamos el cors
 const cors = require('cors');
 //mysql - dependencia para trabajar con la base de datos
 const mysql = require('mysql2/promise');
@@ -44,30 +44,30 @@ async function getConnection() {
   return connection;
 }
 
-//Función para el token
-const generateToken = (data) => {
-  const token = jwt.sign(data, 'secret_key_invented', { expiresIn: '1h' });
-  return token;
-};
+// //Función para el token
+// const generateToken = (data) => {
+//   const token = jwt.sign(data, 'secret_key_invented', { expiresIn: '1h' });
+//   return token;
+// };
 
-//Funciones para la autenticación (verificar y autenticar).
-const verifyToken = (token) => {
-  const verifyT = jwt.verify(token, process.env.SECRET_KEY_TOKEN ||'secret_key_invented')
-  return verifyT;
-}
-const authenticate = (req, res) => {
-  const tokenBearer = req.headers["authorization"];
+// //Funciones para la autenticación (verificar y autenticar).
+// const verifyToken = (token) => {
+//   const verifyT = jwt.verify(token, process.env.SECRET_KEY_TOKEN ||'secret_key_invented')
+//   return verifyT;
+// }
+// const authenticate = (req, res) => {
+//   const tokenBearer = req.headers["authorization"];
 
-  const token = tokenBearer.split(" ")[1];
+//   const token = tokenBearer.split(" ")[1];
 
-  if (!token) {
-    return res.status(401).json({error: "No hay token"})
-  }
+//   if (!token) {
+//     return res.status(401).json({error: "No hay token"})
+//   }
 
-  const validateToken = verifyToken(token);
-  req.user = validateToken;
-  next()  
-}
+//   const validateToken = verifyToken(token);
+//   req.user = validateToken;
+//   next()  
+// }
 
 //ENDPOINT para Leer/Listar todos los registros existentes
 app.get('/books', async(req, res)=>{
@@ -206,7 +206,7 @@ try {
 })
 
 //ENDPOINT para Eliminar un registro existente.
-app.delete("/books/delete", async (req, res)=> {
+app.delete("/books/delete/:id", async (req, res)=> {
 
   const conex = await getConnection();
 
@@ -296,25 +296,25 @@ app.post('/login', async (req, res) => {
   }
 });
 
-//ENDPOINT para ruta privada de una usuaria
-app.get('/user', authenticate, async (req, res) => {
-  console.log(req.user);
+// //ENDPOINT para ruta privada de una usuaria
+// app.get('/user', authenticate, async (req, res) => {
+//   console.log(req.user);
 
-}), 
+// }), 
 
-//ENDPOINT para logout
-app.put('/logout', (req, res) =>{
-  const tokenHeader = req.headers["authorization"];
-  const token = tokenHeader.split(' ')[1]
+// //ENDPOINT para logout
+// app.put('/logout', (req, res) =>{
+//   const tokenHeader = req.headers["authorization"];
+//   const token = tokenHeader.split(' ')[1]
 
-  jwt.sign(token, "", { expiresIn: 1 } , (logoutToken, error) => {
-     if (logoutToken) {
-        res.json({msg: 'Te has desconectado' });
-     } else {
-        res.json({msg: 'Error'});
-     }
-  });
-});
+//   jwt.sign(token, "", { expiresIn: 1 } , (logoutToken, error) => {
+//      if (logoutToken) {
+//         res.json({msg: 'Te has desconectado' });
+//      } else {
+//         res.json({msg: 'Error'});
+//      }
+//   });
+// });
 
 
 // // //1. Instalar y configurar el ejs
